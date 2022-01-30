@@ -1,0 +1,109 @@
+---
+title: "Week 7 Exercise 7.2"
+author: "Jeffrey Dunagin"
+date: January 30 2022
+output:
+  
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Here is my assignment Exercise 7.2. All code will be included, with answers for the second part written in plain text.
+
+# Assignment05
+
+```{r}
+## Set the working directory to the root of your DSC 520 directory
+setwd("C:/Users/12486/DSC520/dsc520")
+
+## Load the `data/r4ds/heights.csv` to
+heights_df <- read.csv("data/r4ds/heights.csv")
+
+## Using `cor()` compute correlation coefficients for
+## height vs. earn
+cor(heights_df$height, heights_df$earn)
+### age vs. earn
+cor(heights_df$age, heights_df$earn)
+### ed vs. earn
+cor(heights_df$ed, heights_df$earn)
+
+
+## Spurious correlation
+## The following is data on US spending on science, space, and technology in millions of today's dollars
+## and Suicides by hanging strangulation and suffocation for the years 1999 to 2009
+## Compute the correlation between these variables
+tech_spending <- c(18079, 18594, 19753, 20734, 20831, 23029, 23597, 23584, 25525, 27731, 29449)
+suicides <- c(5427, 5688, 6198, 6462, 6635, 7336, 7248, 7491, 8161, 8578, 9000)
+cor(tech_spending, suicides)
+```
+
+# Next Assignment
+```{r}
+# Change directory
+setwd("C:/Users/12486/DSC520/dsc520")
+
+## Load the `student-survey.csv` to
+student_survey_df <- read.csv("data/student-survey.csv")
+```
+
+## i. Use R to calculate the covariance of the Survey variables and provide an explanation of why you would use this calculation and what the results indicate.
+```{r}
+# First get the variables
+time_reading <- student_survey_df$TimeReading
+time_tv <- student_survey_df$TimeTV
+happiness <- student_survey_df$Happiness
+gender <- student_survey_df$Gender
+# there are 6 possible covariances to compute here
+cov(time_reading, time_tv)
+cov(time_reading, happiness)
+cov(time_reading, gender)
+cov(time_tv, happiness)
+cov(time_tv, gender)
+cov(happiness, gender)
+```
+The results indicate how any two of the variables are related. A positive covariance means that the variables are positively correlated, and the negative covariance means they are negatively correlated. Comparing the size of the covariance value doesn't have much meaning; we would need to standardize it and turn it into a correlation coefficient to meaningufully compare them to each other.
+
+## ii. Examine the Survey data variables. What measurement is being used for the variables? Explain what effect changing the measurement being used for the variables would have on the covariance calculation. Would this be a problem? Explain and provide a better alternative if needed.
+
+The measurements used for the variables appears to be something like hours for time_reading, minutes for time_tv, percentage for happiness, and a binary variable for gender. Changing the variables would have an effect on the covariance calculation. If you change the variables in a way that increases or decreases the variance, the covariance will increase or decrease as well. A way around this is to use a correlation coefficient instead, which standardizes using the variance of each distribution.
+
+
+## iii. Choose the type of correlation test to perform, explain why you chose this test, and make a prediction if the test yields a positive or negative correlation?
+For this, I would recommend using Pearson's correlation. We are using interval variables rather than ordinal, so testing the relationship on the assumption it is linear is valid. If they were ordinal variables, I might use Spearman's. I expect the correlation coeffients to be the same sign as their covariances.
+
+
+## iv. Perform correlations
+```{r}
+cor(student_survey_df, method='pearson')
+cor(time_reading,time_tv, method='pearson')
+cor.test(time_reading, time_tv, conf.level=0.99)
+```
+From the matrix, time reading is negatively correlated with time tv (-0.91), happiness (-0.41) and gender (-0.09). Time tv is positively correlated with happiness (0.57) and negatively correlated with gender (-0.03). Happiness is positively correlated with gender (0.11). These are all using Pearsons's correlation coefficient. The greater absolute value suggests a greater correlation, and the sign indicates the direction of correlation. The strongest correlation here is between time tv and time reading.
+
+
+## v. Calculate the correlation coefficient and the coefficient of determination, describe what you conclude about the results.
+```{r}
+fit <- lm(TimeTV~TimeReading, data=student_survey_df)
+summary(fit)$r.squared
+cor(time_reading,time_tv)
+```
+Pearson's Correlation Coefficient: -0.88 
+Coefficient of Determination: 0.77
+This is a strong negative correlation of -0.88. The coefficient of determination means 77% of the variation in time reading is predicted by time watching tv.
+
+## vi. Based on your analysis can you say that watching more TV caused students to read less? Explain.
+No, I wouldn't use these results to explain what caused what. For one, because there's a symmetry here, meaning you can just as easily say that watching TV causes less reading as reading causes less TV watching. Second, it's impossible from this data alone to assess the causal relationship between the two. It is very limited.
+
+## vii. Pick three variables and perform a partial correlation, documenting which variable you are “controlling”. Explain how this changes your interpretation and explanation of the results.
+```{r}
+library(ppcor)
+data <- data.frame(time_reading, time_tv, happiness)
+partial_corr <- pcor(data)
+partial_corr[1]
+```
+The Pearson's Correlation Coefficient of time reading and time watching TV is -0.87 when controlling for happiness. This is slightly lower than when not controlling or happiness (-0.88). From this, we can't really see an effect of happiness on this relationship.
+
+
