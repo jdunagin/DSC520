@@ -1,0 +1,46 @@
+---
+title: "Final Project - Step 1"
+author: "Jeffrey Dunagin"
+date: February 13th 2022
+output:
+  
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Introduction
+The topic I plan to research is related to fantasy football. For background, fantasy football is a game where you pick several players across the NFL to be on your team. Each week, your players score points for your team based on how they performed in real life. Fantasy football points are earned from touchdowns, yards gained, receptions, and a few other statistics. Fantasy football is an area with lots of data to be found and exploited. Data is used to both analyze performance and predict future performance. In addition to statistics that directly result in scoring (touchdowns e.g.), there are statistics that are often though of as good predictors or generally relevant to performance, such as targets for a receiver. This makes it a perfect are for a good data scientist to research. There are many questions that could be asked from the data. For this project, analyze different aspects of a player's performance as it relates to both their predictability and relation to other player's performances. I will ask the following questions:
+
+# Research Questions
+1. How predictable are the performances of each position?
+2. What non-scoring statistics are a predictor of a player's score?
+3. What does the distribution of player performances look like?
+4. Which players play the most consistently?
+5. How do players of the same team correlate with each other?
+6. How does one season's performance carry over to the next?
+
+# Approach - Addressing the Problem
+I will have to import data of player performances for at least two seasons of NFL football. This data should include all relevant statistics for fantasy scoring, as well as some additional statistics that could be related. I will also get data on average draft position. This will help analyze the predictability of the players, as higher drafted players can be thought of to have a better predicted performance. I will perform the relevant statistical tests on these data sets to answer these questions.
+
+
+# Data Sets
+1. 'nfl_pass_rush_receive_raw_data2021.csv' is a dataset of all pass, rush, recieve, and other related statistics for each player during each game.
+2. 'nfl_pass_rush_receive_raw_data2020.csv'is the same, but for the 2020 season.
+3. 'nfl-ADP-all.csv' is a data set of each players average draft position (ADP).
+
+These data were obtained at https://www.advancedsportsanalytics.com/nfl-raw-data and https://www.rotowire.com/football/adp.php
+
+The former is a website that keeps track of NFL football analytics. This is raw data, meaning it is simply the statistics that have come out of the game. No further analysis was done on it to create new values. They are complete sets of data for the season. The latter takes data from websites that host fantasy football leagues. It records on average what position players were drafted. I don't expect ADP to vary across different fantasy football websites, so this source of data should provide good general data.
+
+# Required Packages
+
+First, I will need to import the data from a csv or excel file. For this, I will need the readxl package. For my statistical analysis, I will likely rely on the built in R functions. Those functions will fit my basic needs. It's possible I will come across some need that I don't have, and will need to import a package like car. For visualization, I will make sure I load ggplot2.
+
+# Plot and Table Needs
+I will mainly use ggplot2 as a way to visualize my data. I will mainly use histograms and scatter plots for visualizations. My only issue with using tables is that my data sets might be too large for tables to be useful. If I choose to show a subset of my data using a table, I will use the kable function to generate it.
+
+
+# Questions for Future Steps
+For future steps, I will need to be able to merge data sets, as well as correlate data from one data set to another. Specifically, I will need to take the player name from one data set and associate it with the player name in another. This could be tricky, and will likely be done by a combination of manipulation in R and in the data sets themselves.

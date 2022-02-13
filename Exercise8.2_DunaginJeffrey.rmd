@@ -1,0 +1,274 @@
+---
+title: "Exercise 8.2 DSC 520"
+author: "Jeffrey Dunagin"
+date: February 13 2022
+output:
+  
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Intro
+I will first paste all of assignment 06 and 07, and then answer the questions below.
+
+# Assignment 06
+```{r}
+## Set the working directory to the root of your DSC 520 directory
+setwd("C:/Users/12486/DSC520/dsc520")
+
+## Load the `data/r4ds/heights.csv` to
+heights_df <- read.csv("data/r4ds/heights.csv")
+
+## Load the ggplot2 library
+library(ggplot2)
+
+## Fit a linear model using the `age` variable as the predictor and `earn` as the outcome
+age_lm <-  lm(earn~age, data=heights_df)
+
+## View the summary of your model using `summary()`
+summary(age_lm)
+
+## Creating predictions using `predict()`
+age_predict_df <- data.frame(earn = predict(age_lm, heights_df), age=heights_df$age)
+
+## Plot the predictions against the original data
+ggplot(data = heights_df, aes(y = earn, x = age)) +
+  geom_point(color='blue') +
+  geom_line(color='red',data = age_predict_df, aes(y=earn, x=age))
+
+mean_earn <- mean(heights_df$earn)
+## Corrected Sum of Squares Total
+sst <- sum((mean_earn - heights_df$earn)^2)
+## Corrected Sum of Squares for Model
+ssm <- sum((mean_earn - age_predict_df$earn)^2)
+## Residuals
+residuals <- heights_df$earn - age_predict_df$earn
+## Sum of Squares for Error
+sse <- sum(residuals^2)
+## R Squared R^2 = SSM\SST
+r_squared <- ssm/sst
+
+## Number of observations
+n <- length(heights_df$earn)
+## Number of regression parameters
+p <- 2
+## Corrected Degrees of Freedom for Model (p-1)
+dfm <- p-1
+## Degrees of Freedom for Error (n-p)
+dfe <- n-p
+## Corrected Degrees of Freedom Total:   DFT = n - 1
+dft <- n-1
+
+## Mean of Squares for Model:   MSM = SSM / DFM
+msm <- ssm/dfm
+## Mean of Squares for Error:   MSE = SSE / DFE
+mse <- sse/dfe
+## Mean of Squares Total:   MST = SST / DFT
+mst <- sst/dft
+## F Statistic F = MSM/MSE
+f_score <- msm/mse
+
+## Adjusted R Squared R2 = 1 - (1 - R2)(n - 1) / (n - p)
+adjusted_r_squared <- 1 - (1-r_squared)*(n-1)/(n-p)
+
+## Calculate the p-value from the F distribution
+p_value <- pf(f_score, dfm, dft, lower.tail=F)
+```
+# Assignment 07
+```{r}
+setwd("C:/Users/12486/DSC520/dsc520")
+
+## Load the `data/r4ds/heights.csv` to
+heights_df <- read.csv("data/r4ds/heights.csv")
+
+# Fit a linear model
+earn_lm <-  lm(earn ~ height + sex + ed + age + race, data=heights_df)
+
+# View the summary of your model
+summary(earn_lm)
+
+predicted_df <- data.frame(
+  earn = predict(earn_lm, heights_df),
+  ed=heights_df$ed, race=heights_df$ed, height=heights_df$height,
+  age=heights_df$age, sex=heights_df$sex
+  )
+
+## Compute deviation (i.e. residuals)
+mean_earn <- mean(heights_df$earn)
+## Corrected Sum of Squares Total
+sst <- sum((mean_earn - heights_df$earn)^2)
+## Corrected Sum of Squares for Model
+ssm <- sum((mean_earn - predicted_df$earn)^2)
+## Residuals
+residuals <- heights_df$earn - predicted_df$earn
+## Sum of Squares for Error
+sse <- sum(residuals^2)
+## R Squared
+r_squared <- ssm/sst
+
+## Number of observations
+n <- length(heights_df$earn)
+## Number of regression paramaters
+p <- 8
+## Corrected Degrees of Freedom for Model
+dfm <- p-1
+## Degrees of Freedom for Error
+dfe <- n-p
+## Corrected Degrees of Freedom Total:   DFT = n - 1
+dft <- n-1
+
+## Mean of Squares for Model:   MSM = SSM / DFM
+msm <- ssm/dfm
+## Mean of Squares for Error:   MSE = SSE / DFE
+mse <- sse/dfe
+## Mean of Squares Total:   MST = SST / DFT
+mst <- sst/dft
+## F Statistic
+f_score <- msm/mse
+
+## Adjusted R Squared R2 = 1 - (1 - R2)(n - 1) / (n - p)
+adjusted_r_squared <- 1 - (1-r_squared)*(n-1)/(n-p)
+```
+
+
+# Housing Data
+
+## Load the data
+```{r}
+## Set the working directory to the root of your DSC 520 directory
+setwd("C:/Users/12486/DSC520/dsc520")
+
+## Load the `data/r4ds/heights.csv` to
+library(readxl)
+housing_df <- read_excel("data/week-6-housing.xlsx")
+```
+
+## i. Modifications
+```{r}
+names(housing_df)[names(housing_df) == 'Sale Price'] <- 'sale_price'
+```
+The only modification I made to the data set was rename the 'Sale Price' column to 'sale_price'. This eliminated an error I would get when trying to call the column name.
+
+## ii. Linear Model (lm) variables
+```{r}
+single_lm <- lm(sale_price ~ square_feet_total_living, data=housing_df)
+multiple_lm <- lm(sale_price ~ square_feet_total_living + year_built +
+                     + building_grade + sq_ft_lot, data=housing_df)
+```
+
+I have chosen the additional variables year_built, building_grade, and sq_ft_lot as possible predictors of the sale price. The reason being that I think those variables relate to the quality of the home, and therefor will be a factor in how much the house will sell for. I also don't expect them to be correlated so much that it invalidates the assumptions of multiple regression.
+
+## iii. Summary Statistics
+```{r}
+summary(single_lm)
+summary(multiple_lm)
+```
+
+For the single linear model, we have an R^2 and adjusted R^2 of 0.2066.
+For the multiple linear model, we have an R^2 of 0.2233 and adjusted R^2 of 0.223. This can be interpreted as roughly 20-22% of the variation in sale price is due to the independent variables selected. Choosing the additional predictors in the multiple linear regression model only increased the R^2 vale by roughly 0.02%.
+
+## iv. Standardized Betas
+```{r}
+# get standard deviations to scale coefficients
+sd_saleprice <- sd(housing_df$sale_price)
+sd_sqfthouse <- sd(housing_df$square_feet_total_living)
+sd_yrblt <- sd(housing_df$year_built)
+sd_grade <- sd(housing_df$building_grade)
+sd_sqftlot <- sd(housing_df$sq_ft_lot)
+
+# standardized betas:
+coef(single_lm)[2] * sd_sqfthouse/sd_saleprice
+coef(multiple_lm)[2] * sd_sqfthouse/sd_saleprice
+coef(multiple_lm)[3] * sd_yrblt/sd_saleprice
+coef(multiple_lm)[4] * sd_grade/sd_saleprice
+coef(multiple_lm)[5] * sd_sqftlot/sd_saleprice
+```
+These standardized beta values quantify a change in sale price per unit change in the independent variable specified. They are standardized, mean each is expressed in terms of their own standard deviation.
+
+## v. Conidence Interval
+```{r}
+confint(single_lm, level=0.95)
+confint(multiple_lm, level=0.95)
+```
+For each independent variable, the confidence interval indicates the range for the slope of each variable where the 'true' value of the slope has a 95% chance of falling. We can be 95% sure that the independent variables are related to the dependent variable by that coefficient, under the assumptions we have made with our model.
+
+## vi. Analysis of Variance
+```{r}
+anova(single_lm, multiple_lm)
+```
+The F value of 91.7 indicates that there is a significant difference between the two models. The multiple linear model has a lower residual sum of squares, and is a more accurate model.
+
+## vii. Casewise Diagnostics
+```{r}
+library(car)
+outlierTest(multiple_lm)
+```
+This test shows the presence of many outliers.
+
+
+## viii. Standardized Residuals
+```{r}
+predicted_price <- predict(multiple_lm, housing_df)
+residuals <- housing_df$sale_price - predicted_price
+sd_residuals <- sd(residuals)
+std_residuals <- residuals / sd_residuals
+large_residuals <- std_residuals[std_residuals>=2]
+```
+The large residuals are stored in the variable named large_residuals.
+
+## ix. Sum of Large Residuals
+```{r}sum(large_residuals)
+```
+The sum of large residuals is 1438.764.
+
+## x. Which specific variables have large residuals (only cases that evaluate as TRUE)?
+```{r}
+large_residuals
+```
+These variables have large residuals (>2 std).
+
+## xi. Leverage, Cook's Distance, Covariance
+```{r}
+leverage <- hatvalues(multiple_lm)
+cooks <- cooks.distance(multiple_lm)
+cov_housing <- cov(data.frame(housing_df$sale_price, housing_df$square_feet_total_living, 
+                      housing_df$year_built, housing_df$building_grade,
+                      housing_df$sq_ft_lot))
+
+```
+We can look at the cases which exceed a certain value to determine the problematic cases. We can also look for a high covariance between independent variables that may be problematic. Here, I won't print out these quantities for all variables because that would take up hundreds of pages.
+
+## xii. Test Assumption of Independence
+```{r}
+library(lmtest)
+dwtest(multiple_lm)
+```
+DW statistic of 0.54 shows there is some autocorrelation here.
+
+## xiii. Test Assumption of no Collinearity
+```{r}
+library(car)
+vif(multiple_lm)
+```
+The vif scores are not too high for collinararity to be a major issue.
+
+## xiv. Scatter Plot and Histogram of Residuals
+
+```{r}
+library(ggplot2)
+x = c(1:length(residuals))
+ggplot(mapping = aes(x=x, y=residuals)) + geom_point()
+```
+
+```{r}
+ggplot(mapping = aes(residuals)) + geom_histogram(bins=50)
+```
+
+Visually, the scatter plot looks like no assumptions are violated. The line is straight and there are fewer data points as you go out. Note that 'x' is the index for each data point. There are some clear outliers, though. The histogram looks fine too; it roughly looks normally distributed as it should be.
+
+## xv. Overall Bias
+
+Overall, the model performs decently, but has some issues. The autocorrelation is an issue, as well as the presence of outliers. Outliers could possible be omitted to improve the model. That being said, the model is good for predicting 22% of the variation in the sale price, which has some value.
+
