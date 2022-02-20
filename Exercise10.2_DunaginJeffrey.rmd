@@ -1,0 +1,63 @@
+---
+title: "Exercise 10.2 DSC 520"
+author: "Jeffrey Dunagin"
+date: February 20 2022
+output:
+  
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = "C:/Users/12486/DSC520/dsc520")
+```
+# Problem 1
+
+First, load the data. I have pasted the data from the .arff file to a csv file that I titled 'thoracic.csv'.
+```{r}
+## Load the `data/thoracic.csv` to
+thoracic_df <- read.csv("data/thoracic.csv")
+```
+Next, I will use binary logistic regression to predict whether or not the patient survived after a year. I am only using the three numerical variables available as independent variables.
+```{r}
+model <- glm(Risk1yr ~ PRE4 + PRE5 + AGE, family = 'binomial', data = thoracic_df)
+summary(model)
+```
+The PRE4 variable had the largest coefficient, meaning it has the largest effect on the survival rate. Next we can test how well this model predicts the actual rate of survival after a year.
+```{r}
+# convert log probabilities into probabilities
+log_prob <- predict(model, thoracic_df)
+prob <- 1 / (1 + exp(-log_prob))
+prob_binary <- ifelse(prob > 0.5, 1, 0)
+
+# match where prediction agrees with actual value
+correct_predicts <- which(thoracic_df$Risk1yr == prob_binary)
+percent_correct <- length(correct_predicts) / length(prob_binary)
+percent_correct
+```
+Here we've found that our model agrees with the actual value 85% of the time. Note that I considered the prediction to be true when the probability was >50%, and false when not.
+
+# Problem 2
+
+This problem will be mostly similar to the previous.First, read in the data:
+```{r}
+binary_df <- read.csv("data/binary-classifier-data.csv")
+```
+
+Fit a logistic regression model:
+```{r}
+model <- glm(label ~ x + y, family = 'binomial', data = binary_df)
+summary(model)
+```
+Test the accuracy of the model:
+```{r}
+log_prob <- predict(model, binary_df)
+prob <- 1 / (1 + exp(-log_prob))
+
+prob_binary <- ifelse(prob >= 0.5, 1, 0)
+correct_predicts <- which(binary_df$label == prob_binary)
+percent_correct <- length(correct_predicts) / length(prob_binary)
+percent_correct
+```
+Here the model was only 58% correct, or just a little better than half.
+
