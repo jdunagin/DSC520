@@ -1,0 +1,94 @@
+---
+title: "Final Project - Step 2"
+author: "Jeffrey Dunagin"
+date: February 20th 2022
+output:
+  
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = 'C:/Users/12486/DSC520/dsc520/final_project')
+```
+# Import and Clean Data
+I can import the run, pass, receive data first since those data sets follow the same format.
+```{r}
+df_2021 <- read.csv('data/nfl_pass_rush_receive_raw_data2021.csv')
+df_2020 <- read.csv('data/nfl_pass_rush_receive_raw_data2021.csv')
+```
+These data frames contain lots of information I don't need. First, I can take a subset of only the data that I need.
+
+```{r}
+df_2021 <- subset(df_2021, select = c(player, pass_att, pass_yds, pass_td, pass_int, rush_att, rush_yds, rush_td, targets, rec, rec_yds, rec_td, fumbles_lost))
+
+df_2020 <- subset(df_2020, select = c(player, pass_att, pass_yds, pass_td, pass_int, rush_att, rush_yds, rush_td, targets, rec, rec_yds, rec_td, fumbles_lost))
+```
+Now I have to create a column for total fantasy points. This will be done using the formula for fantasy points in PPR format.
+
+```{r}
+df_2021$fantasy_points_PPR <- (df_2021$pass_yds*0.04 + df_2021$pass_td*4 +  df_2021$rush_yds*0.1 + df_2021$rush_td*6 + df_2021$rec + df_2021$rec_yds*0.1 + df_2021$rec_td*6)
+
+df_2020$fantasy_points_PPR <- (df_2020$pass_yds*0.04 + df_2020$pass_td*4 +  df_2020$rush_yds*0.1 + df_2020$rush_td*6 + df_2020$rec + df_2020$rec_yds*0.1 + df_2020$rec_td*6)
+```
+Now I'll deal with the draft position data. My header starts in the second row, so I'll have to account for that.
+```{r}
+draft_df <- read.csv('data/nfl-adp-All.csv', skip=1)
+```
+Again, I will only take a subset of the rows that are useful to me.
+```{r}
+draft_df <- subset(draft_df, select = c(Rank, Name, Pos, Fantrax, Status))
+```
+# Final Data Sets
+```{r}
+head(df_2021)
+head(df_2020)
+head(draft_df)
+```
+
+
+# What Information is Not Self-Evident?
+A lot of information is not 'self evident' about this data. There are many columns of data for each player, and for some players many of the columns are zero. This is due to their position: running backs do not throw passes and quarterbacks do not catch passes.
+
+Also, when doing an analysis of how valuable a player is, you can't just simply look at the total points column and compare all players with each other. You must compare players to the others in their position. Careful analysis must be done to parse the data and answer the questions we want answered.
+
+# What are different ways you could look at this data?
+
+There are two main ways I can think of looking at this data. One is to plot some quantity as a function of its rank, which would illustrate how value drops off from the best players down. The other way would be to show a relationship between two given variables. I would scatter plot one variable vs another, and could use that with regression analysis to uncover a relationship.
+
+
+# How could you summarize your data to answer key questions?
+
+Summarizing data would involve computing a handful of summary statistics. For some of the given variables, we could find the mean or median to get an idea of their central tendencies. We can also easily find the standard deviation of these variables. Not all of the variables will be normally distributed, so it will be worth considering which variables fit to which distributions.
+
+As far as the relationship between variables goes, we can do a simple or multivariate linear regression. Since many of these variables are so mathematically tied together, regression should be particularly effective here. This will allow us to compute statistics such as R^2 and Pearson's R.
+
+# What types of plots and tables will help you to illustrate the findings to your questions?
+
+Scatter plots and histograms will be the most effective visualization tools here. I will use scatter plots when trying to explore the relationship between two variables, and histograms when I'm trying to show how a variable is distributed.
+
+Here's a scatter plot example:
+```{r}
+library(ggplot2)
+ggplot(df_2021, aes(x=rush_yds, y=fantasy_points_PPR)) + geom_point() + ggtitle('Rush Yards vs Fantasy Points')
+```
+Further slicing of the data will need to be done to make this useful. A quick look at it shows that many players have zero rushing yards, but many fantasy points. These are the non-running backs.
+
+# How do you plan to slice and dice the data?
+
+The plot above illustrated the importance of considering position in fantasy football. Statistics that are relevant for one may be irrelevant for others. This makes slicing by position a natural and attractive choice.
+
+For some questions, we may not want to do that though. For example when analyzing draft positions, the data is much simpler and doesn't rely on statistics that only one position adds to.
+
+# Do you plan on incorporating any machine learning techniques to answer your research questions? Explain.
+
+I do plan on doing a regression between some of my variables. The reason being because it will indicate the strengths and characteristics of the relationship between them. However, I'm more interested in summary statistics and uncovering relationships than I am making predictions about future data, so this research will be light on machine learning techniques.
+
+# Questions for future steps?
+
+In the future my analysis will focus around these two questions:
+
+1. Which variables relate to fantasy points the closest?
+2. How well does draft position translate to value?
+
+Of course, there will be more narrow questions involved in answering these two, but these are the overarching main points of the project. More to come in the next week!
