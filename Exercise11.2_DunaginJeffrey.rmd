@@ -1,0 +1,151 @@
+---
+title: "Exercise 11.2 DSC 520"
+author: "Jeffrey Dunagin"
+date: March 5th 2022
+output:
+  
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = "C:/Users/12486/DSC520/dsc520")
+```
+# K-Nearest Neighbors
+
+First load up and plot the data
+```{r}
+# Load the data
+binary_df <- read.csv("data/binary-classifier-data.csv")
+trinary_df <- read.csv("data/trinary-classifier-data.csv")
+
+# Plot
+library(ggplot2)
+ggplot(binary_df, aes(x=x, y=y, color=factor(label))) + geom_point() + ggtitle('Binary')
+ggplot(trinary_df, aes(x=x, y=y, color=factor(label))) + geom_point() + ggtitle('Trinary')
+```
+
+```{r}
+library(class)
+# models
+k3 <- knn(binary_df, binary_df, cl=binary_df[,1], k=3)
+k5 <- knn(binary_df, binary_df, cl=binary_df[,1], k=5)
+k10 <- knn(binary_df, binary_df, cl=binary_df[,1], k=10)
+k15 <- knn(binary_df, binary_df, cl=binary_df[,1], k=15)
+k20 <- knn(binary_df, binary_df, cl=binary_df[,1], k=20)
+k25 <- knn(binary_df, binary_df, cl=binary_df[,1], k=25)
+
+# get accuracy
+k3 <- as.numeric(k3)
+k3_correct <- length(k3[k3-1 == binary_df[,1]]) / length(binary_df[,1])
+
+k5 <- as.numeric(k5)
+k5_correct <- length(k5[k5-1 == binary_df[,1]]) / length(binary_df[,1])
+
+k10 <- as.numeric(k10)
+k10_correct <- length(k10[k10-1 == binary_df[,1]]) / length(binary_df[,1])
+
+k15 <- as.numeric(k15)
+k15_correct <- length(k15[k15-1 == binary_df[,1]]) / length(binary_df[,1])
+
+k20 <- as.numeric(k20)
+k20_correct <- length(k20[k20-1 == binary_df[,1]]) / length(binary_df[,1])
+
+k25 <- as.numeric(k25)
+k25_correct <- length(k25[k25-1 == binary_df[,1]]) / length(binary_df[,1])
+
+k3_correct
+k5_correct
+k10_correct
+k15_correct
+k20_correct
+k25_correct
+
+# plot
+ks <- c(3,5,10,15,20,25)
+accuracies <- c(k3_correct, k5_correct, k10_correct, k15_correct, k20_correct, 
+                k25_correct)
+plot(ks, accuracies)
+```
+For the binary data set, accuracies all ranged around 97-98%.
+```{r}
+# do the same for trinary
+k3 <- knn(trinary_df, trinary_df, cl=trinary_df[,1], k=3)
+k5 <- knn(trinary_df, trinary_df, cl=trinary_df[,1], k=5)
+k10 <- knn(trinary_df, trinary_df, cl=trinary_df[,1], k=10)
+k15 <- knn(trinary_df, trinary_df, cl=trinary_df[,1], k=15)
+k20 <- knn(trinary_df, trinary_df, cl=trinary_df[,1], k=20)
+k25 <- knn(trinary_df, trinary_df, cl=trinary_df[,1], k=25)
+
+# get accuracy
+k3 <- as.numeric(k3)
+k3_correct <- length(k3[k3-1 == trinary_df[,1]]) / length(trinary_df[,1])
+
+k5 <- as.numeric(k5)
+k5_correct <- length(k5[k5-1 == trinary_df[,1]]) / length(trinary_df[,1])
+
+k10 <- as.numeric(k10)
+k10_correct <- length(k10[k10-1 == trinary_df[,1]]) / length(trinary_df[,1])
+
+k15 <- as.numeric(k15)
+k15_correct <- length(k15[k15-1 == trinary_df[,1]]) / length(trinary_df[,1])
+
+k20 <- as.numeric(k20)
+k20_correct <- length(k20[k20-1 == trinary_df[,1]]) / length(trinary_df[,1])
+
+k25 <- as.numeric(k25)
+k25_correct <- length(k25[k25-1 == trinary_df[,1]]) / length(trinary_df[,1])
+
+k3_correct
+k5_correct
+k10_correct
+k15_correct
+k20_correct
+k25_correct
+
+# plot
+ks <- c(3,5,10,15,20,25)
+accuracies <- c(k3_correct, k5_correct, k10_correct, k15_correct, k20_correct, 
+                k25_correct)
+plot(ks, accuracies)
+
+```
+For trinary data, the accuracy ranges from 90-98%.
+
+## Accuracy
+
+Looking at these plots, no, a linear classifier does not look like it would be useful. Neither variable has a visual correlation with being in one group or the other. To the eye, they are evenly spread in clusters. This is why this kind of analysis ultimately lead to a more accurate result than logistic regression did.
+
+# K-Means Clustering
+```{r}
+clustering_df <- read.csv("data/clustering-data.csv")
+
+#plot
+ggplot(clustering_df, aes(x=x, y=y)) + geom_point() + ggtitle('Clustering')
+
+# K-means clustering
+
+for (k in ks)
+{
+  cluster <- kmeans(clustering_df,k) 
+  cluster <- cluster$cluster
+  print(ggplot(clustering_df, aes(x=x, y=y, color=factor(cluster))) + geom_point() + ggtitle(
+    paste('k =', as.character(k))))
+}
+
+# distance to center
+cluster <- kmeans(clustering_df,2) 
+sum(cluster$withinss)
+
+# for all ks
+ssdistances <- c()
+for (k in ks)
+{
+  cluster <- kmeans(clustering_df,k) 
+  ssdistances <- append(ssdistances,sum(cluster$withinss))
+}
+ssdistances
+plot(ks, ssdistances)
+```
+At k=5, you stop getting as much accuracy per increase in k. That is what visually looks like the "elbow", but note that accuracy does continue to increase until about k=10.
+

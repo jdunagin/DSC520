@@ -1,0 +1,181 @@
+---
+title: "Final Project"
+author: "Jeffrey Dunagin"
+date: March 5th 2022
+output:
+  
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = 'C:/Users/12486/DSC520/dsc520/final_project')
+```
+# Introduction
+
+  Welcome to fantasy football. Here's how you play: get together a group of friends to form a league. Each person is a manager of a fantasy football team. Each player then drafts real NFL players to be on their team. Players earn points for their team each week by gaining yards, scoring touchdowns, and receiving passes.
+
+  This game, like many others involving prediction, is highly stochastic in nature. There is no secret formula to know exactly how many points your favorite player is going to score on a given week. However, in the long term the randomness tends to average out to form predictable patterns. These patterns we can analyze to learn more about the game.
+
+# Problem Statement - How I addressed
+
+Our aim here is going to be to look at fantasy football from a statistical/mathematical perspective. Viewing the players as statistical objects helps us to better understand the game. As such we will answer the following questions:
+
+1. What does the distribution of performances look like, measured in fantasy points?
+2. How does that distribution vary from position to position?
+3. What can summary statistics tell us about the distribution?
+
+We can then move on to the topic of prediction. We know this game has some randomness, but surely players performances can be predicted to some extent. We are going to attempt to quantify some of that. The most widely available form of prediction data comes from the draft at the beginning of the season. A good draft rank is essentially a prediction that the player will perform well for the season. So, we can compare draft ranks with end-of-season performances. We will answer:
+
+4. Using linear regression, how much can draft position account for performance by the end of the season?
+5. How are the residuals distributed - is a linear model a good assumption?
+
+# Analysis
+The first step here is to do some data visualization and get summary statistics. We have two seasons of data, so we can plot the histogram of total fantasy points for each season.
+
+```{r, echo=FALSE, message=FALSE}
+library(dplyr)
+library(ggplot2)
+
+df_2021 <- read.csv('data/nfl_pass_rush_receive_raw_data2021.csv')
+df_2020 <- read.csv('data/nfl_pass_rush_receive_raw_data2020.csv')
+
+df_2021 <- subset(df_2021, select = c(player, pos, pass_att, pass_yds, pass_td, pass_int, rush_att, rush_yds, rush_td, targets, rec, rec_yds, rec_td, fumbles_lost))
+
+df_2020 <- subset(df_2020, select = c(player, pos, pass_att, pass_yds, pass_td, pass_int, rush_att, rush_yds, rush_td, targets, rec, rec_yds, rec_td, fumbles_lost))
+
+# create fantasy points variable
+df_2021$fantasy_points_PPR <- (df_2021$pass_yds*0.04 + df_2021$pass_td*4 +  df_2021$rush_yds*0.1 + df_2021$rush_td*6 + df_2021$rec + df_2021$rec_yds*0.1 + df_2021$rec_td*6)
+
+df_2020$fantasy_points_PPR <- (df_2020$pass_yds*0.04 + df_2020$pass_td*4 +  df_2020$rush_yds*0.1 + df_2020$rush_td*6 + df_2020$rec + df_2020$rec_yds*0.1 + df_2020$rec_td*6)
+
+# group by player
+grouped_2021 <- df_2021 %>% group_by(player) %>% 
+  summarize(fantasy_points_PPR = sum(fantasy_points_PPR))
+
+grouped_2020 <- df_2020 %>% group_by(player) %>% 
+  summarize(fantasy_points_PPR = sum(fantasy_points_PPR))
+
+(ggplot(grouped_2021, aes(fantasy_points_PPR)) + geom_histogram(bins=30) + ggtitle('2021 Season') + xlab('Fantasy Points'))
+(ggplot(grouped_2020, aes(fantasy_points_PPR)) + geom_histogram(bins=30) + ggtitle('2020 Season') + xlab('Fantasy Points'))
+```
+
+We can further break this up by position. We have 4 main positions, QB, RB, WR, and TE. We will plot each of their distributions, along with summary statistics. To avoid death by histogram, we will consider only the 2021 season.
+
+```{r, echo=FALSE}
+# group by position
+QB_2021 <- df_2021[df_2021$pos == 'QB',] %>% group_by(player) %>% 
+  summarize(fantasy_points_PPR = sum(fantasy_points_PPR))
+
+RB_2021 <- df_2021[df_2021$pos == 'RB',]%>% group_by(player) %>% 
+  summarize(fantasy_points_PPR = sum(fantasy_points_PPR))
+
+WR_2021 <- df_2021[df_2021$pos == 'WR',] %>% group_by(player) %>% 
+  summarize(fantasy_points_PPR = sum(fantasy_points_PPR))
+
+TE_2021 <- df_2021[df_2021$pos == 'TE',] %>% group_by(player) %>% 
+  summarize(fantasy_points_PPR = sum(fantasy_points_PPR))
+
+# plots and summary
+(ggplot(QB_2021, aes(fantasy_points_PPR)) + geom_histogram(bins=30) + ggtitle('Quarterbacks') + xlab('Fantasy Points'))
+print(paste('Mean:', mean(QB_2021$fantasy_points_PPR)))
+print(paste('Median:', median(QB_2021$fantasy_points_PPR)))
+print(paste('SD:', sd(QB_2021$fantasy_points_PPR)))
+print(paste('Skew:',(3*(mean(QB_2021$fantasy_points_PPR) - median(QB_2021$fantasy_points_PPR)) / sd(QB_2021$fantasy_points_PPR))))
+
+
+(ggplot(RB_2021, aes(fantasy_points_PPR)) + geom_histogram(bins=30) + ggtitle('Running Backs') + xlab('Fantasy Points'))
+print(paste('Mean:', mean(RB_2021$fantasy_points_PPR)))
+print(paste('Median:', median(RB_2021$fantasy_points_PPR)))
+print(paste('SD:', sd(RB_2021$fantasy_points_PPR)))
+print(paste('Skew:',(3*(mean(RB_2021$fantasy_points_PPR) - median(RB_2021$fantasy_points_PPR)) / sd(RB_2021$fantasy_points_PPR))))
+
+(ggplot(WR_2021, aes(fantasy_points_PPR)) + geom_histogram(bins=30) + ggtitle('Wide Receivers') + xlab('Fantasy Points'))
+print(paste('Mean:', mean(WR_2021$fantasy_points_PPR)))
+print(paste('Median:', median(WR_2021$fantasy_points_PPR)))
+print(paste('SD:', sd(WR_2021$fantasy_points_PPR)))
+print(paste('Skew:',(3*(mean(WR_2021$fantasy_points_PPR) - median(WR_2021$fantasy_points_PPR)) / sd(WR_2021$fantasy_points_PPR))))
+
+(ggplot(TE_2021, aes(fantasy_points_PPR)) + geom_histogram(bins=30) + ggtitle('Tight Ends') + xlab('Fantasy Points'))
+print(paste('Mean:', mean(TE_2021$fantasy_points_PPR)))
+print(paste('Median:', median(TE_2021$fantasy_points_PPR)))
+print(paste('SD:', sd(TE_2021$fantasy_points_PPR)))
+print(paste('Skew:',(3*(mean(TE_2021$fantasy_points_PPR) - median(TE_2021$fantasy_points_PPR)) / sd(TE_2021$fantasy_points_PPR))))
+
+```
+The next question I asked is how predictable the performances of the best players are. To do that, I looked at data for what position each player was drafted at on average and compared it to how they finished at the end of the season. Essentially, I am comparing the aggregate predictions of thousands of players with the results from the entire season.
+
+We will focus on running backs and wide receivers, since they have the most data available. The size of the data sets for other positions are too small to get anything useful. We will use the first 25 drafted running backs, and first 30 wide receivers.
+
+```{r, echo=FALSE}
+# Import data
+draft_df <- read.csv('data/nfl-adp-All.csv', skip=1)
+draft_df <- subset(draft_df, select = c(Rank, Name, Pos, Fantrax, Status, fp_PPR))
+
+# getting top 25 rb and top 30 wr
+draft_RB <- draft_df[draft_df$Pos=='RB',]
+draft_RB <- subset(draft_RB, select=c(Name, Fantrax, fp_PPR))
+draft_RB <- head(draft_RB, 25)
+
+draft_WR <- draft_df[draft_df$Pos=='WR',]
+draft_WR <- subset(draft_WR, select=c(Name, Fantrax, fp_PPR))
+draft_WR <- head(draft_WR, 30)
+```
+
+I'm going to to a simple regression on the total fantasy points as a function of draft position. We will plot the line over the resulting distribution, and compute R^2 and Pearson's r.
+
+```{r, echo=FALSE}
+library(ggplot2)
+# Running Backs
+(ggplot(draft_RB, aes(x=as.numeric(Fantrax), y=fp_PPR)) + geom_point() + 
+    geom_smooth(method='lm', formula=y~x) + xlab('Draft Rank') + 
+  ylab('Total Points') + ggtitle('Running Backs'))
+rb_lm <- lm(fp_PPR ~ as.numeric(Fantrax), draft_RB)
+print(paste('R Squared:',summary(rb_lm)$r.squared))
+print(paste('Pearson\'s r:', cor(as.numeric(draft_RB$Fantrax), draft_RB$fp_PPR, method='pearson')))
+
+# Wide Receivers
+(ggplot(draft_WR, aes(x=as.numeric(Fantrax), y=fp_PPR)) + geom_point() + 
+    geom_smooth(method='lm', formula=y~x) + xlab('Draft Rank') + 
+  ylab('Total Points') + ggtitle('Wide Receivers'))
+wr_lm <- lm(fp_PPR ~ as.numeric(Fantrax), draft_WR)
+print(paste('R Squared:',summary(wr_lm)$r.squared))
+print(paste('Pearson\'s r:', cor(as.numeric(draft_WR$Fantrax), draft_WR$fp_PPR, method='pearson')))
+
+```
+A few statistics to note about this data. In both cases we had negative correlations of -0.44 and -0.36, respectively. This lead to R^2 values of 0.20 and 0.13, respectively. The take away from this is that yes, average predictions about the best players are possible, but are generally weak. The order in which players get selected can only account for about 13-20% of the variation across these two positions. Fantasy football is predictable (thank god), but also has lots of noise.
+
+We can plot the residuals as well and do a test for normality.
+
+```{r, echo=FALSE}
+rb_resid <- resid(rb_lm)
+(ggplot(as.data.frame(rb_resid), aes(x=1:nrow(as.data.frame(rb_resid)) , y=rb_resid)) + 
+    geom_point() + xlab('Index') + ylab('Residuals') + ggtitle('Running Backs'))
+print(paste('Shapiro Test:',shapiro.test(rb_resid)))
+
+
+wr_resid <- resid(wr_lm)
+(ggplot(as.data.frame(wr_resid), aes(x=1:nrow(as.data.frame(wr_resid)) , y=wr_resid)) + 
+    geom_point() + xlab('Index')  + ylab('Residuals')  + ggtitle('Wide Receivers'))
+print(paste('Shapiro Test:',shapiro.test(wr_resid)))
+
+```
+The Shapiro-Wilk test yielded a p-value of 0.93 for running backs, but only 0.4 for wide receivers. The residuals are much more normally distributed for running backs. I don't have a reason for this, but a priori I don't know how I would expect them to be distributed.
+
+# Implications
+
+There are a few major takeaways with this. The first is regarding the histograms of player's performances. Players are not distributed normally, but rather something that looks either Pareto or exponential. It is the case that few of the players disproportionately score most of the points. We can see that this is the case within individual positions too. However, I would like the reader to note the skew for each position. They are QB: 1.47, RB: 1.03, WR: 1.27, and TE: 1.30. While some summary statistics can seem abstract and hard to interpret, this one actually carries some significance. The skew, in general, represents how much of the distribution is at one end, in this case the right end. Translating this to fantasy football terms, it is how many players are performing at a comparatively higher level. The lower the skew is, the less players in that position performing at an elite level, and the more scarce players at that position are. It is no coincidence that running backs, with the lowest skew, are considered the most valuable and take up most of the early draft spots.
+
+The implication of the second part is that draft position does carry some predictive weight. This should be expected, but breakout players from the later rounds often call into doubt the predictable nature of this game. It's good to remind us that this game can be predicted to some degree, but it's also humbling to see that there is still LOTS of noise lurking in the background with the residuals. Of course, this kind of prediction is about as simple as it gets. I'm not claiming this is the limit of being able to predict how well a player will do. Surely some machine learning algorithm should be able to outperform what is essentially a poll of public opinion.
+
+# Limitations
+
+One of the biggest limitations here is the amount of data used. Multiple seasons of aggregated data would likely dull down the effects of outliers and bring us closer to a correct understanding. This is especially true in our analysis of draft position's ability to predict performance. Because we limited ourselves to a single season, we missed out on the opportunity to analyze positions other than running back or wide receiver. This analysis could be done for any season we have data for. If I were to expand on this project, that is what I would do.
+
+Another limitation as mentioned above is the lack of a better machine learning model. There is no reason to expect linear regression to be ideal here -  there is even reason to go against that idea. The distribution of player performances alone should dissuade us from linear models. However, when using a smaller subset of the data we are more likely to get away with it.
+
+# Concluding Remarks
+
+This project was an overview of fantasy football from a statistical perspective. We took raw data from two seasons and transformed them to plot the distribution of player performances in total, and based on the four main positions. We computed the summary statistics of mean, median, standard deviation, and skew, and uncovered a relevant insight via comparing the skew. We then moved on to the topic of prediction, and did a linear regression of player performances as a function of draft position. We found that there is a relationship between where a player is drafted and how they perform, and it goes in the direction we expect. By the same analysis, we also learned the limits to predicting a player's performance based on that metric alone.
+
+This analysis was largely an exploration of conventional wisdom; no new major insights were discovered along the way. Instead, we stuck to a broad summary and learned the statistical underpinnings to some conventional wisdom that already exists.
